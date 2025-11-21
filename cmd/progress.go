@@ -50,11 +50,12 @@ var progressCmd = &cobra.Command{
 		// Itera sobre a lista e printa no terminal o progresso de cada laboratório
 		for _, lab := range laboratorios {
 			fmt.Printf("%s: ", lab.Name)
-			if lab.Status == "in-progress" {
+			switch lab.Status {
+			case "in-progress":
 				fmt.Printf("⏳ %s\n", magenta(lab.Status))
-			} else if lab.Status == "not-started" {
+			case "not-started":
 				fmt.Printf("⚪ %s\n", lab.Status)
-			} else {
+			default:
 				fmt.Printf("✅ %s\n", green(lab.Status))
 			}
 		}
