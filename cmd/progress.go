@@ -23,12 +23,26 @@ var progressCmd = &cobra.Command{
 		}
 
 		// Sincronizando a lista de laboratorios do ConfigMap com o arquivo progresso.yaml
-		laboratorios, _ := client.GetAllLabs(context.Background())
-		progress := common.Progress{}
-		err = progress.SaveProgressToFile()
+		laboratorios, err := client.GetAllLabs(context.Background())
 		if err != nil {
-			fmt.Printf("erro ao salvar o progresso no arquivo yaml progress.yaml: %s\n", err)
+			fmt.Printf("erro ao buscar laboratórios: %s\n", err)
 			return
+		}
+
+		progress := common.NewProgress("")
+
+		if len(laboratorios) > 0 {
+			progress.Labs = laboratorios
+			err = progress.SaveProgressToFile()
+			if err != nil {
+				fmt.Printf("erro ao salvar o progresso no arquivo yaml progress.yaml: %s\n", err)
+				return
+			}
+		} else {
+			// Se não houver dados no Kubernetes, tenta carregar do arquivo local
+			if err := progress.LoadProgressFromFile(); err == nil {
+				laboratorios = progress.Labs
+			}
 		}
 
 		// Pega a lista de laboratórios instalados do ConfigMap
@@ -38,9 +52,15 @@ var progressCmd = &cobra.Command{
 			fmt.Printf("%s: ", lab.Name)
 			if lab.Status == "in-progress" {
 				fmt.Printf("⏳ %s\n", magenta(lab.Status))
+			} else if lab.Status == "not-started" {
+				fmt.Printf("⚪ %s\n", lab.Status)
 			} else {
 				fmt.Printf("✅ %s\n", green(lab.Status))
 			}
 		}
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(progressCmd)
 }
